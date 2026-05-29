@@ -1,0 +1,6 @@
+{
+  "name": "AuraSound",
+  "description": "Zero Streaming. Zero Battery Drain. Premium offline ambient audio sound mixer for sleep, focus, and mindfulness.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
