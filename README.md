@@ -21,11 +21,13 @@ There is no hosted demo configured. Play Store-ready screenshots and listing cop
 
 ### Screenshots
 
-![AuraSound mixer screen](play-store/phone/01_mixer.png)
-
-![AuraSound timer screen](play-store/phone/02_timer.png)
-
-![AuraSound presets screen](play-store/phone/03_presets.png)
+<table>
+  <tr>
+    <td><img src="play-store/phone/01_mixer.png" alt="AuraSound mixer screen" width="220"></td>
+    <td><img src="play-store/phone/02_timer.png" alt="AuraSound timer screen" width="220"></td>
+    <td><img src="play-store/phone/03_presets.png" alt="AuraSound presets screen" width="220"></td>
+  </tr>
+</table>
 
 ## Key Features
 
