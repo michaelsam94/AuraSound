@@ -10,8 +10,6 @@ AuraSound is an offline Android ambient sound mixer for sleep, focus, relaxation
 It lets people layer calming sound loops, adjust each channel independently, save favorite mixes,
 and use a sleep timer without streaming audio or requiring an account.
 
-![AuraSound mixer screenshot](play-store/phone/01_mixer.png)
-
 ## Project Overview
 
 AuraSound solves a simple problem: building a personal background soundscape should be fast,
@@ -20,6 +18,14 @@ meditate, relax, mask environmental noise, or fall asleep with layered ambient a
 
 There is no hosted demo configured. Play Store-ready screenshots and listing copy are stored in
 [`play-store/`](play-store/).
+
+### Screenshots
+
+![AuraSound mixer screen](play-store/phone/01_mixer.png)
+
+![AuraSound timer screen](play-store/phone/02_timer.png)
+
+![AuraSound presets screen](play-store/phone/03_presets.png)
 
 ## Key Features
 
