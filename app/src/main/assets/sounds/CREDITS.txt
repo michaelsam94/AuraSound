@@ -1,0 +1,20 @@
+AuraSound — audio sources
+Nature/ambient/sleep tracks: Creative Commons 0 (public domain) via freesound.org.
+Focus tracks (white/pink/brown noise): procedurally synthesized at build time.
+========================================================================
+
+nature/rain_light.ogg  <-  "RAIN_Late Spring.Residential Area.Lawn.Under The Shade Of Trees.Drops On Vegetation 1_EM" by newlocknew (CC0)  fs#818347  https://freesound.org/people/newlocknew/sounds/818347/
+nature/rain_heavy.ogg  <-  "Heavy rain_clear recording" by dersinnsspace (CC0)  fs#435221  https://freesound.org/people/dersinnsspace/sounds/435221/
+nature/thunder_rumble.ogg  <-  "Distant Thunder and Rain from Half Open Window 2.aif" by RutgerMuller (CC0)  fs#158691  https://freesound.org/people/RutgerMuller/sounds/158691/
+nature/ocean_waves.ogg  <-  "BGSaSc Water Beach Ocean Waves Constant Splashing Rocks Many Small Waves Greece 16" by Profispiesser (CC0)  fs#550915  https://freesound.org/people/Profispiesser/sounds/550915/
+nature/forest_birds.ogg  <-  "forest-bird (2).WAV" by sama66 (CC0)  fs#462136  https://freesound.org/people/sama66/sounds/462136/
+nature/river_stream.ogg  <-  "Stream River Water Up Close" by jackthemurray (CC0)  fs#433589  https://freesound.org/people/jackthemurray/sounds/433589/
+ambient/campfire.ogg  <-  "Campfire Close Crackling Sticks.mp3" by FunWithSound (CC0)  fs#588401  https://freesound.org/people/FunWithSound/sounds/588401/
+ambient/soft_wind.ogg  <-  "Open_field_winds_summer_ambience.wav" by nickmaysoundmusic (CC0)  fs#523374  https://freesound.org/people/nickmaysoundmusic/sounds/523374/
+ambient/coffee_shop.ogg  <-  "Cofee shop Ambience .wav" by aidansamuel (CC0)  fs#540299  https://freesound.org/people/aidansamuel/sounds/540299/
+ambient/train_tracks.ogg  <-  "Train Rumble and Rattle" by ProductionNow (CC0)  fs#455045  https://freesound.org/people/ProductionNow/sounds/455045/
+ambient/fan_electric.ogg  <-  "SERVICE FAN 1.WAV" by tbsounddesigns (CC0)  fs#530200  https://freesound.org/people/tbsounddesigns/sounds/530200/
+sleep/singing_bowl.ogg  <-  "Tibetan Singing Bowl" by FlashTrauma (CC0)  fs#398285  https://freesound.org/people/FlashTrauma/sounds/398285/
+sleep/deep_drone.ogg  <-  "Bass Drone Pad 258 Hz with higher freq chaos" by CVLTIV8R (CC0)  fs#810373  https://freesound.org/people/CVLTIV8R/sounds/810373/
+sleep/night_crickets.ogg  <-  "Crickets At Night - Clean sound" by Defelozedd94 (CC0)  fs#522298  https://freesound.org/people/Defelozedd94/sounds/522298/
+sleep/heartbeat_slow.ogg  <-  "heartbeat-40bpm.wav" by loudernoises (CC0)  fs#332816  https://freesound.org/people/loudernoises/sounds/332816/

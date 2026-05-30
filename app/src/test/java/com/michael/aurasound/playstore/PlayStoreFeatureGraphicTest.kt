@@ -1,0 +1,60 @@
+package com.michael.aurasound.playstore
+
+import android.content.Context
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toBitmap
+import androidx.test.core.app.ApplicationProvider
+import com.michael.aurasound.R
+import com.michael.aurasound.ui.theme.MyApplicationTheme
+import org.junit.Test
+import org.junit.experimental.categories.Category
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+@RunWith(RobolectricTestRunner::class)
+@Category(PlayStoreScreenshotTests::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [35])
+class PlayStoreFeatureGraphicTest {
+
+    @Test
+    @Config(qualifiers = "w1024dp-h500dp-mdpi")
+    fun feature_graphic() {
+        capturePlayStoreImage("feature-graphic.png") {
+            FeatureGraphicContent()
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "w512dp-h512dp-mdpi")
+    fun app_icon_512() {
+        val ctx = ApplicationProvider.getApplicationContext<Context>()
+        capturePlayStoreImage("app-icon-512.png") {
+            MyApplicationTheme {
+                val iconBitmap = remember {
+                    checkNotNull(ctx.getDrawable(R.mipmap.ic_launcher))
+                        .toBitmap(512, 512)
+                        .asImageBitmap()
+                }
+                Box(
+                    Modifier.fillMaxSize().background(Color.White),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Image(iconBitmap, contentDescription = null, modifier = Modifier.size(512.dp))
+                }
+            }
+        }
+    }
+}

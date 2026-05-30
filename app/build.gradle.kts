@@ -1,7 +1,9 @@
 import java.io.File
 import java.io.ByteArrayOutputStream
+import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.Properties
 import java.util.Random
 
 plugins {
@@ -12,12 +14,21 @@ plugins {
   alias(libs.plugins.secrets)
 }
 
+// Enable the Play Store screenshot test category only for Roborazzi / asset-generation
+// tasks, so normal `testDebugUnitTest` stays fast and never runs screenshot tests.
+if (gradle.startParameter.taskNames.any {
+    it.equals("generatePlayStoreAssets", ignoreCase = true) ||
+      it.contains("Roborazzi", ignoreCase = true)
+  }) {
+  extra["screenshot"] = true
+}
+
 android {
-  namespace = "com.example"
+  namespace = "com.michael.aurasound"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.aistudio.aurasound.amb"
+    applicationId = "com.michael.aurasound"
     minSdk = 24
     targetSdk = 36
     versionCode = 1
@@ -28,11 +39,23 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      // Prefer key.properties (archived in playstore-keys); fall back to env vars for CI.
+      val keystorePropertiesFile = rootProject.file("key.properties")
+      if (keystorePropertiesFile.exists()) {
+        val keystoreProperties = Properties().apply {
+          FileInputStream(keystorePropertiesFile).use { load(it) }
+        }
+        storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+        storePassword = keystoreProperties.getProperty("storePassword")
+        keyAlias = keystoreProperties.getProperty("keyAlias")
+        keyPassword = keystoreProperties.getProperty("keyPassword")
+      } else {
+        val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
+        storeFile = file(keystorePath)
+        storePassword = System.getenv("STORE_PASSWORD")
+        keyAlias = "upload"
+        keyPassword = System.getenv("KEY_PASSWORD")
+      }
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -61,7 +84,38 @@ android {
     compose = true
     buildConfig = true
   }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      all {
+        val screenshotTests = project.hasProperty("screenshot")
+        it.inputs.property("screenshotTestsEnabled", screenshotTests)
+        // Heavy settings ONLY for screenshot runs — do not slow normal testDebugUnitTest.
+        if (screenshotTests) {
+          it.maxParallelForks = 1
+          it.maxHeapSize = "2048m"
+          it.systemProperty("robolectric.pixelCopyRenderMode", "hardware")
+        }
+        it.useJUnit {
+          if (screenshotTests) {
+            includeCategories("com.michael.aurasound.playstore.PlayStoreScreenshotTests")
+          } else {
+            excludeCategories("com.michael.aurasound.playstore.PlayStoreScreenshotTests")
+          }
+        }
+      }
+    }
+  }
+}
+
+roborazzi {
+  outputDir.set(file("${rootProject.projectDir}/play-store"))
+}
+
+tasks.register("generatePlayStoreAssets") {
+  group = "publishing"
+  description = "Generate Play Store screenshots, feature graphic, and app icon via Roborazzi"
+  dependsOn("recordRoborazziDebug")
 }
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
@@ -177,12 +231,17 @@ tasks.register("generateAmbientSounds") {
       (random.nextInt(12000) - 6000).toShort()
     }
     
-    // Pink noise approximation (cumulative noise with decay)
-    var pinkValue = 0.0
+    // Pink noise: Paul Kellet's filter (true ~ -3 dB/octave rolloff)
+    var pb0 = 0.0
+    var pb1 = 0.0
+    var pb2 = 0.0
     writeWav("focus", "pink_noise") { _, _ ->
       val white = random.nextDouble() * 2.0 - 1.0
-      pinkValue = 0.95 * pinkValue + 0.05 * white
-      (pinkValue * 28000).toInt().coerceIn(-32768, 32767).toShort()
+      pb0 = 0.99765 * pb0 + white * 0.0990460
+      pb1 = 0.96300 * pb1 + white * 0.2965164
+      pb2 = 0.57000 * pb2 + white * 1.0526913
+      val pink = pb0 + pb1 + pb2 + white * 0.1848
+      (pink * 9000).toInt().coerceIn(-32768, 32767).toShort()
     }
 
     // Brown noise (leaky integration of white noise)
@@ -193,131 +252,11 @@ tasks.register("generateAmbientSounds") {
       (brownValue * 60000).toInt().coerceIn(-32768, 32767).toShort()
     }
 
-    // 2. Nature group
-    var rainVal = 0.0
-    writeWav("nature", "rain_light") { _, _ ->
-      val white = random.nextDouble() * 2.0 - 1.0
-      rainVal = 0.93 * rainVal + 0.07 * white
-      val click = if (random.nextDouble() > 0.998) (random.nextInt(16000) - 8000) else 0
-      (rainVal * 20000 + click).toInt().coerceIn(-32768, 32767).toShort()
-    }
-
-    var heavyRainVal = 0.0
-    writeWav("nature", "rain_heavy") { _, t ->
-      val white = random.nextDouble() * 2.0 - 1.0
-      heavyRainVal = 0.98 * heavyRainVal + 0.02 * white
-      val rumble = Math.sin(2 * Math.PI * 45 * t) * 2000
-      (heavyRainVal * 30000 + rumble).toInt().coerceIn(-32768, 32767).toShort()
-    }
-
-    writeWav("nature", "thunder_rumble") { i, t ->
-      val strike = Math.sin(2 * Math.PI * 2 * t)
-      val amp = Math.pow(Math.sin(2 * Math.PI * 0.2 * t + 0.5), 4.0) * 8000
-      val lowNoise = (random.nextInt(3000) - 1500) * amp / 8000
-      (Math.sin(2 * Math.PI * 35 * t) * amp + lowNoise).toInt().coerceIn(-32768, 32767).toShort()
-    }
-
-    writeWav("nature", "ocean_waves") { _, t ->
-      val modulation = 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.4 * t) // 2.5s wave cycle
-      val white = random.nextDouble() * 2.0 - 1.0
-      (white * 15000 * modulation).toInt().toShort()
-    }
-
-    writeWav("nature", "forest_birds") { i, t ->
-      val background = (random.nextInt(2000) - 1000)
-      val birdActive = (t % 1.2) < 0.25
-      val birdSound = if (birdActive) {
-        val sweepFreq = 1800.0 + 600.0 * Math.sin(2 * Math.PI * 22 * t)
-        val phase = t * sweepFreq
-        (Math.sin(phase) * 6000).toInt()
-      } else 0
-      (background + birdSound).coerceIn(-32768, 32767).toShort()
-    }
-
-    writeWav("nature", "river_stream") { _, t ->
-      val modulation = 0.8 + 0.2 * Math.sin(2 * Math.PI * 8.0 * t) // rapid flutter
-      val white = random.nextDouble() * 2.0 - 1.0
-      (white * 12000 * modulation).toInt().toShort()
-    }
-
-    // 3. Ambient group
-    writeWav("ambient", "campfire") { _, t ->
-      val hum = (random.nextInt(3000) - 1500)
-      val snap = if (random.nextDouble() > 0.997) (random.nextInt(18000) - 9000) else 0
-      (hum + snap).coerceIn(-32768, 32767).toShort()
-    }
-
-    writeWav("ambient", "soft_wind") { _, t ->
-      val modulation = 0.65 + 0.35 * Math.sin(2 * Math.PI * 0.3 * t)
-      val white = random.nextDouble() * 2.0 - 1.0
-      (white * 10000 * modulation).toInt().toShort()
-    }
-
-    writeWav("ambient", "coffee_shop") { _, t ->
-      val voice1 = Math.sin(2 * Math.PI * 180 * t) * 1500
-      val voice2 = Math.sin(2 * Math.PI * 250 * t) * 1200
-      val clink = if (random.nextDouble() > 0.999) (Math.sin(2 * Math.PI * 2500 * t) * 6000).toInt() else 0
-      val noise = (random.nextInt(3000) - 1500)
-      (voice1 + voice2 + clink + noise).toInt().coerceIn(-32768, 32767).toShort()
-    }
-
-    writeWav("ambient", "train_tracks") { _, t ->
-      // Rhythmic train "clack-clack" (approx 1.5 Hz)
-      val cycleProgress = t % 0.66
-      val isClack = cycleProgress < 0.05 || (cycleProgress in 0.15..0.20)
-      val rumble = Math.sin(2 * Math.PI * 55 * t) * 4000
-      val clackValue = if (isClack) (random.nextInt(8000) - 4000) else 0
-      (rumble + clackValue).toInt().coerceIn(-32768, 32767).toShort()
-    }
-
-    writeWav("ambient", "fan_electric") { _, t ->
-      val rotor1 = Math.sin(2 * Math.PI * 58 * t) * 6000
-      val rotor2 = Math.sin(2 * Math.PI * 116 * t) * 3000
-      val airNoise = (random.nextInt(5000) - 2500)
-      (rotor1 + rotor2 + airNoise).toInt().coerceIn(-32768, 32767).toShort()
-    }
-
-    // 4. Sleep group
-    writeWav("sleep", "singing_bowl") { _, t ->
-      val decay = Math.max(0.0, 1.0 - t / duration)
-      val resonance1 = Math.sin(2 * Math.PI * 293.66 * t) * 8000 // D4
-      val resonance2 = Math.sin(2 * Math.PI * 440.0 * t) * 4000  // A4
-      val vibrato = 0.8 + 0.2 * Math.sin(2 * Math.PI * 3.0 * t)
-      ((resonance1 + resonance2) * decay * vibrato).toInt().toShort()
-    }
-
-    writeWav("sleep", "deep_drone") { _, t ->
-      val f1 = Math.sin(2 * Math.PI * 65.41 * t) * 6000 // C2
-      val f2 = Math.sin(2 * Math.PI * 98.0 * t) * 4000  // G2
-      val f3 = Math.sin(2 * Math.PI * 130.81 * t) * 2000 // C3
-      (f1 + f2 + f3).toInt().toShort()
-    }
-
-    writeWav("sleep", "night_crickets") { _, t ->
-      // crickets chirp periodically
-      val chirpCycle = t % 0.4
-      val isChirp = chirpCycle < 0.12
-      val chirp = if (isChirp) {
-        val freq = 3800 * (1 + 0.05 * Math.sin(2 * Math.PI * 150 * t))
-        (Math.sin(2 * Math.PI * freq * t) * 6000).toInt()
-      } else 0
-      chirp.toShort()
-    }
-
-    writeWav("sleep", "heartbeat_slow") { _, t ->
-      val cycleProgress = t % 1.2 // 50 bpm
-      val isLub = cycleProgress in 0.0..0.12
-      val isDub = cycleProgress in 0.2..0.32
-      val amp = if (isLub) {
-        val s = Math.sin(2 * Math.PI * (cycleProgress / 0.12))
-        s * 15000
-      } else if (isDub) {
-        val s = Math.sin(2 * Math.PI * ((cycleProgress - 0.2) / 0.12))
-        s * 10000
-      } else 0.0
-      val sound = amp * Math.sin(2 * Math.PI * 48 * t)
-      sound.toInt().toShort()
-    }
+    // The remaining 15 tracks (nature / ambient / sleep) are real CC0 field
+    // recordings fetched from Freesound by scripts/fetch_sounds.py — synthesized
+    // approximations sounded artificial, so they are no longer generated here.
+    // White/pink/brown noise stay synthesized: that is mathematically exact and
+    // cleaner than any recording.
   }
 }
 
